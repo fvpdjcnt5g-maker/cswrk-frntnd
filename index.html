@@ -173,10 +173,10 @@
             :key="lesson._id"
           >
             <div class="card h-100">
-              <!-- Correct backend image path with fallback -->
+              <!-- Updated backend image path -->
               <img
                 class="card-img-top lesson-img"
-                :src="`http://localhost:3000/static/${lesson.image}`"
+                :src="`${BACKEND_URL}/static/${lesson.image}`"
                 @error="event => event.target.src='https://via.placeholder.com/160x160?text=No+Image'"
                 alt="Lesson image"
               />
@@ -276,6 +276,10 @@
   </div>
 
   <script>
+    const BACKEND_URL = window.location.hostname === "localhost"
+      ? "http://localhost:3000"
+      : "https://your-backend.onrender.com"; // replace with your Render backend URL
+
     new Vue({
       el: '#app',
       data: {
@@ -315,8 +319,7 @@
           this.cart.push(lesson);
           lesson.space--;
 
-          // Update backend
-          fetch(`http://localhost:3000/lessons/${lesson._id}`, {
+          fetch(`${BACKEND_URL}/lessons/${lesson._id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ space: lesson.space })
@@ -330,8 +333,7 @@
           lesson.space++;
           this.cart.splice(index, 1);
 
-          // Update backend again to increment space
-          fetch(`http://localhost:3000/lessons/${lesson._id}`, {
+          fetch(`${BACKEND_URL}/lessons/${lesson._id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ space: lesson.space })
@@ -356,7 +358,7 @@
             }))
           };
 
-          fetch('http://localhost:3000/orders', {
+          fetch(`${BACKEND_URL}/orders`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(orderData)
@@ -375,7 +377,7 @@
         }
       },
       mounted() {
-        fetch('http://localhost:3000/lessons')
+        fetch(`${BACKEND_URL}/lessons`)
           .then(res => res.json())
           .then(data => (this.lessons = data))
           .catch(err => console.error('Error loading lessons:', err));
