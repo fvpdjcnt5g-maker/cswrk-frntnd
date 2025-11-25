@@ -173,7 +173,6 @@
             :key="lesson._id"
           >
             <div class="card h-100">
-              <!-- Updated backend image path -->
               <img
                 class="card-img-top lesson-img"
                 :src="`${BACKEND_URL}/static/${lesson.image}`"
@@ -276,9 +275,7 @@
   </div>
 
   <script>
-    const BACKEND_URL = window.location.hostname === "localhost"
-      ? "http://localhost:3000"
-      : "https://your-backend.onrender.com"; // replace with your Render backend URL
+    const BACKEND_URL = "https://courseworkv-bcknd-1.onrender.com";
 
     new Vue({
       el: '#app',
@@ -325,7 +322,6 @@
             body: JSON.stringify({ space: lesson.space })
           })
           .then(res => res.json())
-          .then(data => console.log('Updated space:', data))
           .catch(err => console.error('Update error:', err));
         },
         removeFromCart(index) {
@@ -339,7 +335,6 @@
             body: JSON.stringify({ space: lesson.space })
           })
           .then(res => res.json())
-          .then(data => console.log('Restored space:', data))
           .catch(err => console.error('Restore error:', err));
         },
         checkout() {
@@ -364,12 +359,9 @@
             body: JSON.stringify(orderData)
           })
           .then(res => res.json())
-          .then(data => {
-            console.log('Order saved:', data);
-
+          .then(() => {
             this.cart = [];
             this.orderConfirmed = true;
-            alert('You have successfully checked out!');
             this.order = { name: '', phone: '' };
             this.showLessons = true;
           })
