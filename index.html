@@ -122,58 +122,101 @@
 </div>
 
 <script>
-const BACKEND_URL = "https://courseworkv-bcknd-1.onrender.com";
+  const BACKEND_URL = "https://courseworkv-bcknd-1.onrender.com"; // your Render backend
 
-new Vue({
-  el: '#app',
-  data: {
-    lessons: [], cart: [], showLessons: true, searchText:'', sortAttr:'topic', sortDir:'asc',
-    order:{name:'',phone:''}, orderConfirmed:false
-  },
-  computed:{
-    filteredAndSortedLessons(){
-      let filtered=this.lessons.filter(l=>l.topic.toLowerCase().includes(this.searchText.toLowerCase())||
-                                            l.location.toLowerCase().includes(this.searchText.toLowerCase()));
-      return filtered.sort((a,b)=>{
-        let mod=this.sortDir==='asc'?1:-1;
-        if(a[this.sortAttr]<b[this.sortAttr]) return -1*mod;
-        if(a[this.sortAttr]>b[this.sortAttr]) return 1*mod;
-        return 0;
-      });
+  new Vue({
+    el: '#app',
+    data: {
+      lessons: [],
+      cart: [],
+      showLessons: true,
+      searchText: '',
+      sortAttr: 'topic',
+      sortDir: 'asc',
+      order: { name: '', phone: '' },
+      orderConfirmed: false
     },
-    cartTotal(){ return this.cart.reduce((sum,item)=>sum+item.price,0); },
-    isFormValid(){ return /^[A-Za-z\s]+$/.test(this.order.name) && /^[0-9]+$/.test(this.order.phone); }
-  },
-  methods:{
-    addToCart(lesson){
-      if(lesson.space===0) return;
-      this.cart.push(lesson);
-      lesson.space--;
-      fetch(`${BACKEND_URL}/lessons/${lesson._id}`,{
-        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({space:lesson.space})
-      }).then(res=>res.json()).catch(err=>console.error(err));
+    computed: {
+      filteredAndSortedLessons() {
+        let filtered = this.lessons.filter(l =>
+          l.topic.toLowerCase().includes(this.searchText.toLowerCase()) ||
+          l.location.toLowerCase().includes(this.searchText.toLowerCase())
+        );
+        return filtered.sort((a, b) => {
+          let mod = this.sortDir === 'asc' ? 1 : -1;
+          if (a[this.sortAttr] < b[this.sortAttr]) return -1 * mod;
+          if (a[this.sortAttr] > b[this.sortAttr]) return 1 * mod;
+          return 0;
+        });
+      },
+      cartTotal() {
+        return this.cart.reduce((sum, item) => sum + item.price, 0);
+      },
+      isFormValid() {
+        return /^[A-Za-z\s]+$/.test(this.order.name) && /^[0-9]+$/.test(this.order.phone);
+      }
     },
-    removeFromCart(index){
-      const lesson=this.cart[index];
-      lesson.space++;
-      this.cart.splice(index,1);
-      fetch(`${BACKEND_URL}/lessons/${lesson._id}`,{
-        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({space:lesson.space})
-      }).then(res=>res.json()).catch(err=>console.error(err));
+    methods: {
+      addToCart(lesson) {
+        if (lesson.space === 0) return;
+        this.cart.push(lesson);
+        lesson.space--;
+
+        fetch(`${BACKEND_URL}/lessons/${lesson._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ space: lesson.space })
+        }).catch(err => console.error('Update error:', err));
+      },
+      removeFromCart(index) {
+        const lesson = this.cart[index];
+        lesson.space++;
+        this.cart.splice(index, 1);
+
+        fetch(`${BACKEND_URL}/lessons/${lesson._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ space: lesson.space })
+        }).catch(err => console.error('Restore error:', err));
+      },
+      checkout() {
+        if (!this.isFormValid) {
+          alert('Please fill in valid details.');
+          return;
+        }
+
+        const orderData = {
+          name: this.order.name,
+          phone: this.order.phone,
+          cart: this.cart.map(item => ({
+            lessonId: item._id,
+            topic: item.topic,
+            price: item.price
+          }))
+        };
+
+        fetch(`${BACKEND_URL}/orders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData)
+        })
+        .then(res => res.json())
+        .then(() => {
+          this.cart = [];
+          this.orderConfirmed = true;
+          this.order = { name: '', phone: '' };
+          this.showLessons = true;
+        })
+        .catch(err => console.error('Checkout error:', err));
+      }
     },
-    checkout(){
-      if(!this.isFormValid){ alert('Please fill valid details'); return; }
-      const orderData={name:this.order.name, phone:this.order.phone, cart:this.cart.map(i=>({lessonId:i._id, topic:i.topic, price:i.price}))};
-      fetch(`${BACKEND_URL}/orders`,{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(orderData)})
-        .then(res=>res.json()).then(()=>{
-          this.cart=[]; this.orderConfirmed=true; this.order={name:'',phone:''}; this.showLessons=true;
-        }).catch(err=>console.error(err));
+    mounted() {
+      fetch(`${BACKEND_URL}/lessons`)
+        .then(res => res.json())
+        .then(data => (this.lessons = data))
+        .catch(err => console.error('Error loading lessons:', err));
     }
-  },
-  mounted(){
-    fetch(`${BACKEND_URL}/lessons`).then(res=>res.json()).then(data=>this.lessons=data).catch(err=>console.error(err));
-  }
-});
+  });
 </script>
 </body>
 </html>
