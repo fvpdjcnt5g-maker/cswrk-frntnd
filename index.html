@@ -58,6 +58,7 @@
     </nav>
 
     <div class="container">
+
       <!-- Lessons page -->
       <div v-if="showLessons">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -80,10 +81,9 @@
           <div class="col-md-4 mb-4" v-for="lesson in filteredAndSortedLessons" :key="lesson._id">
             <div class="card h-100">
 
-              <!-- ✅ FIXED IMAGE PATH -->
               <img
                 class="card-img-top lesson-img"
-                :src="`${BACKEND_URL}/public/${lesson.image}`"
+                :src="`https://courseworkv-bcknd-1.onrender.com/${lesson.image}`"
                 @error="event => event.target.src='https://via.placeholder.com/160x160?text=No+Image'"
                 alt="Lesson image"
               />
@@ -110,6 +110,14 @@
 
       <!-- Cart page -->
       <div v-else>
+        <!-- ✅ Checkout confirmation alert appears here -->
+        <div v-if="orderConfirmed" class="alert alert-success mt-4" role="alert">
+          ✅ Thank you, {{ order.name }}! Your order has been confirmed.
+          <button class="btn btn-sm btn-light ms-3" @click="orderConfirmed = false; showLessons = true;">
+            Back to Lessons
+          </button>
+        </div>
+
         <h3 class="mb-3">Your Cart</h3>
         <div v-if="cart.length === 0" class="alert alert-info">Your cart is empty.</div>
 
@@ -142,10 +150,6 @@
             <i class="fa fa-check-circle"></i> Confirm Order
           </button>
         </form>
-
-        <div v-if="orderConfirmed" class="alert alert-success mt-4" role="alert">
-          ✅ Thank you, {{ order.name }}! Your order has been confirmed.
-        </div>
       </div>
     </div>
   </div>
@@ -208,10 +212,19 @@
         },
         checkout() {
           if (!this.isFormValid) { alert('Please fill in valid details.'); return; }
-          const orderData = { name: this.order.name, phone: this.order.phone, cart: this.cart.map(item => ({ lessonId: item._id, topic: item.topic, price: item.price })) };
+          const orderData = { 
+            name: this.order.name, 
+            phone: this.order.phone, 
+            cart: this.cart.map(item => ({ lessonId: item._id, topic: item.topic, price: item.price })) 
+          };
           fetch(`${BACKEND_URL}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderData) })
             .then(res => res.json())
-            .then(() => { this.cart = []; this.orderConfirmed = true; this.order = { name: '', phone: '' }; this.showLessons = true; })
+            .then(() => { 
+              this.cart = []; 
+              this.orderConfirmed = true; // show alert
+              this.order = { name: '', phone: '' }; 
+              // keep on cart page
+            })
             .catch(err => console.error('Checkout error:', err));
         }
       },
