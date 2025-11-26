@@ -30,7 +30,7 @@
     .btn-success:hover { background-color: #ffd0a3; }
     .btn-danger { background-color: #676f9d; border: none; }
     .btn-danger:hover { background-color: #424769; }
-    .card { background-color: #424769; border: none; border-radius: 15px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); color: #ffffff; }
+    .card { background-color: #424769; border: none; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); color: #ffffff; }
     .lesson-img { height: 160px; object-fit: cover; border-radius: 10px; }
     .form-control, .form-select { background-color: #676f9d; border: none; color: #ffffff; }
     .form-control::placeholder { color: #dcdcdc; }
@@ -61,9 +61,7 @@
       <!-- Lessons page -->
       <div v-if="showLessons">
         <div class="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <input type="text" class="form-control" placeholder="Search lessons..." v-model="searchText" style="width: 250px;" />
-          </div>
+          <input type="text" class="form-control" placeholder="Search lessons..." v-model="searchText" style="width: 250px;" />
           <div class="d-flex align-items-center gap-2">
             <select v-model="sortAttr" class="form-select">
               <option value="topic">Topic</option>
@@ -81,19 +79,28 @@
         <div class="row">
           <div class="col-md-4 mb-4" v-for="lesson in filteredAndSortedLessons" :key="lesson._id">
             <div class="card h-100">
+
+              <!-- ✅ FIXED IMAGE PATH -->
               <img
                 class="card-img-top lesson-img"
-                :src="`${BACKEND_URL}/static/${lesson.image}`"
+                :src="`${BACKEND_URL}/public/${lesson.image}`"
                 @error="event => event.target.src='https://via.placeholder.com/160x160?text=No+Image'"
                 alt="Lesson image"
               />
+
               <div class="card-body">
                 <h5 class="card-title fw-bold">{{ lesson.topic }}</h5>
                 <p class="card-text"><i class="fa fa-map-marker-alt"></i> {{ lesson.location }}</p>
                 <p class="card-text mb-1"><strong>Price:</strong> ${{ lesson.price }}</p>
                 <p class="card-text mb-3"><strong>Spaces:</strong> {{ lesson.space }}</p>
-                <button class="btn btn-primary w-100" @click="addToCart(lesson)" :disabled="lesson.space === 0" :class="{ 'disabled-btn': lesson.space === 0 }">
-                  <i class="fa fa-cart-plus"></i> {{ lesson.space === 0 ? 'Full' : 'Add to Cart' }}
+                <button
+                  class="btn btn-primary w-100"
+                  @click="addToCart(lesson)"
+                  :disabled="lesson.space === 0"
+                  :class="{ 'disabled-btn': lesson.space === 0 }"
+                >
+                  <i class="fa fa-cart-plus"></i>
+                  {{ lesson.space === 0 ? 'Full' : 'Add to Cart' }}
                 </button>
               </div>
             </div>
@@ -187,7 +194,7 @@
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ space: lesson.space })
-          });
+          }).then(res => res.json()).catch(err => console.error('Update error:', err));
         },
         removeFromCart(index) {
           const lesson = this.cart[index];
@@ -197,31 +204,21 @@
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ space: lesson.space })
-          });
+          }).then(res => res.json()).catch(err => console.error('Restore error:', err));
         },
         checkout() {
-          if (!this.isFormValid) return;
-          const orderData = {
-            name: this.order.name,
-            phone: this.order.phone,
-            cart: this.cart.map(item => ({ lessonId: item._id, topic: item.topic, price: item.price }))
-          };
-          fetch(`${BACKEND_URL}/orders`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(orderData)
-          }).then(() => {
-            this.cart = [];
-            this.orderConfirmed = true;
-            this.order = { name: '', phone: '' };
-            this.showLessons = true;
-          });
+          if (!this.isFormValid) { alert('Please fill in valid details.'); return; }
+          const orderData = { name: this.order.name, phone: this.order.phone, cart: this.cart.map(item => ({ lessonId: item._id, topic: item.topic, price: item.price })) };
+          fetch(`${BACKEND_URL}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderData) })
+            .then(res => res.json())
+            .then(() => { this.cart = []; this.orderConfirmed = true; this.order = { name: '', phone: '' }; this.showLessons = true; })
+            .catch(err => console.error('Checkout error:', err));
         }
       },
       mounted() {
         fetch(`${BACKEND_URL}/lessons`)
           .then(res => res.json())
-          .then(data => { this.lessons = data; })
+          .then(data => (this.lessons = data))
           .catch(err => console.error('Error loading lessons:', err));
       }
     });
